@@ -1,0 +1,8 @@
+{
+  "appId": "io.ionic.moveablock",
+  "appName": "move-a-block",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "build",
+  "cordova": {}
+}
