@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import useKeyPress from "./hooks/key-press-handler";
 import "./App.css";
+import { UserPreferences } from "typescript";
 
 function App() {
   const moveUp: boolean = useKeyPress("ArrowUp");
@@ -16,11 +17,18 @@ function App() {
     Array<string>(64),
   ]);
   const width: number = 8;
+  const leftBoundary: MutableRefObject<number[]> = useRef<number[]>([
+    0, 8, 16, 24, 32, 40, 48, 56,
+  ]);
+  const rightBoundary: MutableRefObject<number[]> = useRef<number[]>([
+    7, 15, 23, 31, 39, 47, 55, 63,
+  ]);
+
   useEffect(() => {
     let buildLevel: Array<string> = new Array<string>(64);
-    buildLevel.fill(emptySpace, 0, 63);
-    buildLevel[7] = player;
-    buildLevel[31] = obstacle;
+    buildLevel.fill(emptySpace, 0, 64);
+    buildLevel[10] = player;
+    buildLevel[37] = obstacle;
     buildLevel[27] = goal;
     buildLevel[17] = box;
     setCurrentArrangement(buildLevel);
@@ -31,61 +39,88 @@ function App() {
       const boxLocation = currentState.indexOf(box);
       const playerLocation = currentState.indexOf(player);
 
-      if (
-        moveUp &&
-        currentState[playerLocation - width] !== obstacle &&
-        currentState[playerLocation - width] !== undefined &&
-        currentState[boxLocation - width] !== undefined
-      ) {
-        if (currentState[boxLocation - width] !== obstacle) {
-          currentState[boxLocation - width] = box;
-          currentState[boxLocation] = emptySpace;
+      if (moveUp) {
+        let playersNewLocation = currentState[playerLocation - width];
+        if (
+          playersNewLocation !== obstacle &&
+          playersNewLocation !== undefined
+        ) {
+          let boxesNewLocation = currentState[boxLocation - width];
+          if (boxesNewLocation !== obstacle && boxesNewLocation !== undefined) {
+            currentState[boxLocation - width] = box;
+            currentState[boxLocation] = emptySpace;
+          }
+          if (currentState[playerLocation - width] !== box) {
+            currentState[playerLocation - width] = player;
+            currentState[playerLocation] =
+              currentState[playerLocation] === box ? box : emptySpace;
+          }
         }
-        currentState[playerLocation - width] = player;
-        currentState[playerLocation] = emptySpace;
       }
 
-      if (
-        moveDown &&
-        currentState[playerLocation + width] !== obstacle &&
-        currentState[playerLocation + width] !== undefined &&
-        currentState[boxLocation + width] !== undefined
-      ) {
-        if (currentState[boxLocation + width] !== obstacle) {
-          currentState[boxLocation + width] = box;
-          currentState[boxLocation] = emptySpace;
+      if (moveDown) {
+        let playersNewLocation = currentState[playerLocation + width];
+        if (
+          playersNewLocation !== obstacle &&
+          playersNewLocation !== undefined
+        ) {
+          let boxesNewLocation = currentState[boxLocation + width];
+          if (boxesNewLocation !== obstacle && boxesNewLocation !== undefined) {
+            currentState[boxLocation + width] = box;
+            currentState[boxLocation] = emptySpace;
+          }
+          if (currentState[playerLocation + width] !== box) {
+            currentState[playerLocation + width] = player;
+            currentState[playerLocation] =
+              currentState[playerLocation] === box ? box : emptySpace;
+          }
         }
-        currentState[playerLocation + width] = player;
-        currentState[playerLocation] = emptySpace;
       }
 
-      if (
-        moveLeft &&
-        currentState[playerLocation - 1] !== obstacle &&
-        currentState[playerLocation - 1] !== undefined &&
-        currentState[boxLocation - 1] !== undefined
-      ) {
-        if (currentState[boxLocation - 1] !== obstacle) {
-          currentState[boxLocation - 1] = box;
-          currentState[boxLocation] = emptySpace;
+      if (moveLeft) {
+        let playersNewLocation = currentState[playerLocation - 1];
+        if (
+          playersNewLocation !== obstacle &&
+          playersNewLocation !== undefined &&
+          rightBoundary.current.includes(playerLocation - 1) === false
+        ) {
+          let boxesNewLocation = currentState[boxLocation - 1];
+          if (
+            boxesNewLocation !== obstacle &&
+            rightBoundary.current.includes(boxLocation - 1) === false
+          ) {
+            currentState[boxLocation - 1] = box;
+            currentState[boxLocation] = emptySpace;
+          }
+          if (currentState[playerLocation - 1] !== box) {
+            currentState[playerLocation - 1] = player;
+            currentState[playerLocation] =
+              currentState[playerLocation] === box ? box : emptySpace;
+          }
         }
-        currentState[playerLocation - 1] = player;
-        currentState[playerLocation] = emptySpace;
       }
 
-      if (
-        moveRight &&
-        currentState[playerLocation + 1] !== obstacle &&
-        currentState[playerLocation + 1] !== undefined &&
-        currentState[boxLocation + 1] !== undefined
-      ) {
-        if (currentState[boxLocation + 1] !== obstacle) {
-          currentState[boxLocation + 1] = box;
-          currentState[boxLocation] = emptySpace;
+      if (moveRight) {
+        let playersNewLocation = currentState[playerLocation + 1];
+        if (
+          playersNewLocation !== obstacle &&
+          playersNewLocation !== undefined &&
+          leftBoundary.current.includes(playerLocation + 1) === false
+        ) {
+          let boxesNewLocation = currentState[boxLocation + 1];
+          if (
+            boxesNewLocation !== obstacle &&
+            leftBoundary.current.includes(boxLocation + 1) === false
+          ) {
+            currentState[boxLocation + 1] = box;
+            currentState[boxLocation] = emptySpace;
+          }
+          if (currentState[playerLocation + 1] !== box) {
+            currentState[playerLocation + 1] = player;
+            currentState[playerLocation] =
+              currentState[playerLocation] === box ? box : emptySpace;
+          }
         }
-
-        currentState[playerLocation + 1] = player;
-        currentState[playerLocation] = emptySpace;
       }
 
       setCurrentArrangement(currentState);
@@ -100,6 +135,9 @@ function App() {
     currentArrangement,
     player,
     obstacle,
+    leftBoundary,
+    rightBoundary,
+    goal,
   ]);
 
   return (
@@ -108,9 +146,9 @@ function App() {
         <div className="game">
           {currentArrangement.map((blocks: string, index: number) => {
             return (
-             
+              <div className="box">
                 <img data-id={index} alt={blocks} key={index} src={blocks} />
-             
+              </div>
             );
           })}
         </div>
