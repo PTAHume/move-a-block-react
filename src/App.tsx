@@ -1,7 +1,7 @@
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 import useKeyPress from "./hooks/key-press-handler";
 import "./App.css";
-import { UserPreferences } from "typescript";
+import Cell from "./shared/Cell";
 
 function App() {
   const moveUp: boolean = useKeyPress("ArrowUp");
@@ -14,7 +14,7 @@ function App() {
   const goal = require("./images/goal.png");
   const obstacle = require("./images/obstacle.png");
   const [currentArrangement, setCurrentArrangement]: any[] = useState([
-    Array<string>(64),
+    Array<Cell>(64),
   ]);
   const width: number = 8;
   const leftBoundary: MutableRefObject<number[]> = useRef<number[]>([
@@ -25,35 +25,50 @@ function App() {
   ]);
 
   useEffect(() => {
-    let buildLevel: Array<string> = new Array<string>(64);
-    buildLevel.fill(emptySpace, 0, 64);
-    buildLevel[10] = player;
-    buildLevel[37] = obstacle;
-    buildLevel[27] = goal;
-    buildLevel[17] = box;
+    let buildLevel: Array<Cell> = new Array(64)
+      .fill(undefined, 0, 64)
+      .map(
+        (value: any, index: number) =>
+          new Cell({ content: emptySpace, index: index })
+      );
+
+    buildLevel[10] = new Cell({ content: player, index: 10 });
+    buildLevel[37] = new Cell({ content: obstacle, index: 37 });
+    buildLevel[27] = new Cell({ content: goal, index: 27 });
+    buildLevel[17] = new Cell({ content: box, index: 17 });
     setCurrentArrangement(buildLevel);
   }, [player, obstacle, goal, emptySpace, box]);
   useEffect(() => {
     if (moveUp || moveDown || moveLeft || moveRight) {
-      const currentState = currentArrangement;
-      const boxLocation = currentState.indexOf(box);
-      const playerLocation = currentState.indexOf(player);
+      const currentState: Cell[] = currentArrangement;
+      const boxLocations: Cell[] = currentState.filter(
+        (cell: Cell) => cell.content === box
+      );
+      const playerLocation: number = currentState.findIndex(
+        (value) => value.content === player
+      );
 
       if (moveUp) {
         let playersNewLocation = currentState[playerLocation - width];
         if (
-          playersNewLocation !== obstacle &&
-          playersNewLocation !== undefined
+          playersNewLocation !== undefined &&
+          playersNewLocation.content !== obstacle
         ) {
-          let boxesNewLocation = currentState[boxLocation - width];
-          if (boxesNewLocation !== obstacle && boxesNewLocation !== undefined) {
-            currentState[boxLocation - width] = box;
-            currentState[boxLocation] = emptySpace;
-          }
-          if (currentState[playerLocation - width] !== box) {
-            currentState[playerLocation - width] = player;
-            currentState[playerLocation] =
-              currentState[playerLocation] === box ? box : emptySpace;
+          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+            (cell: Cell) => {
+              return currentState[cell.index - width];
+            }
+          );
+          boxesNewLocations.forEach((cell: Cell) => {
+            if (cell !== undefined && cell.content !== obstacle) {
+              currentState[cell.index].content = box;
+              currentState[cell.index + width].content = emptySpace;
+            }
+          });
+          if (currentState[playerLocation - width].content !== box) {
+            currentState[playerLocation - width].content = player;
+            currentState[playerLocation].content =
+              currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
       }
@@ -61,18 +76,24 @@ function App() {
       if (moveDown) {
         let playersNewLocation = currentState[playerLocation + width];
         if (
-          playersNewLocation !== obstacle &&
-          playersNewLocation !== undefined
+          playersNewLocation !== undefined &&
+          playersNewLocation.content !== obstacle
         ) {
-          let boxesNewLocation = currentState[boxLocation + width];
-          if (boxesNewLocation !== obstacle && boxesNewLocation !== undefined) {
-            currentState[boxLocation + width] = box;
-            currentState[boxLocation] = emptySpace;
-          }
-          if (currentState[playerLocation + width] !== box) {
-            currentState[playerLocation + width] = player;
-            currentState[playerLocation] =
-              currentState[playerLocation] === box ? box : emptySpace;
+          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+            (cell: Cell) => {
+              return currentState[cell.index + width];
+            }
+          );
+          boxesNewLocations.forEach((cell: Cell) => {
+            if (cell !== undefined && cell.content !== obstacle) {
+              currentState[cell.index].content = box;
+              currentState[cell.index - width].content = emptySpace;
+            }
+          });
+          if (currentState[playerLocation + width].content !== box) {
+            currentState[playerLocation + width].content = player;
+            currentState[playerLocation].content =
+              currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
       }
@@ -80,22 +101,28 @@ function App() {
       if (moveLeft) {
         let playersNewLocation = currentState[playerLocation - 1];
         if (
-          playersNewLocation !== obstacle &&
           playersNewLocation !== undefined &&
+          playersNewLocation.content !== obstacle &&
           rightBoundary.current.includes(playerLocation - 1) === false
         ) {
-          let boxesNewLocation = currentState[boxLocation - 1];
-          if (
-            boxesNewLocation !== obstacle &&
-            rightBoundary.current.includes(boxLocation - 1) === false
-          ) {
-            currentState[boxLocation - 1] = box;
-            currentState[boxLocation] = emptySpace;
-          }
-          if (currentState[playerLocation - 1] !== box) {
-            currentState[playerLocation - 1] = player;
-            currentState[playerLocation] =
-              currentState[playerLocation] === box ? box : emptySpace;
+          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+            (cell: Cell) => {
+              return currentState[cell.index - 1];
+            }
+          );
+          boxesNewLocations.forEach((cell: Cell) => {
+            if (
+              cell.content !== obstacle &&
+              rightBoundary.current.includes(cell.index) === false
+            ) {
+              currentState[cell.index].content = box;
+              currentState[cell.index + 1].content = emptySpace;
+            }
+          });
+          if (currentState[playerLocation - 1].content !== box) {
+            currentState[playerLocation - 1].content = player;
+            currentState[playerLocation].content =
+              currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
       }
@@ -103,22 +130,28 @@ function App() {
       if (moveRight) {
         let playersNewLocation = currentState[playerLocation + 1];
         if (
-          playersNewLocation !== obstacle &&
           playersNewLocation !== undefined &&
+          playersNewLocation.content !== obstacle &&
           leftBoundary.current.includes(playerLocation + 1) === false
         ) {
-          let boxesNewLocation = currentState[boxLocation + 1];
-          if (
-            boxesNewLocation !== obstacle &&
-            leftBoundary.current.includes(boxLocation + 1) === false
-          ) {
-            currentState[boxLocation + 1] = box;
-            currentState[boxLocation] = emptySpace;
-          }
-          if (currentState[playerLocation + 1] !== box) {
-            currentState[playerLocation + 1] = player;
-            currentState[playerLocation] =
-              currentState[playerLocation] === box ? box : emptySpace;
+          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+            (cell: Cell) => {
+              return currentState[cell.index + 1];
+            }
+          );
+          boxesNewLocations.forEach((cell: Cell) => {
+            if (
+              cell.content !== obstacle &&
+              leftBoundary.current.includes(cell.index) === false
+            ) {
+              currentState[cell.index].content = box;
+              currentState[cell.index - 1].content = emptySpace;
+            }
+          });
+          if (currentState[playerLocation + 1].content !== box) {
+            currentState[playerLocation + 1].content = player;
+            currentState[playerLocation].content =
+              currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
       }
@@ -144,10 +177,15 @@ function App() {
     <>
       <div className="app">
         <div className="game">
-          {currentArrangement.map((blocks: string, index: number) => {
+          {currentArrangement.map((cell: Cell, index: number) => {
             return (
-              <div className="box">
-                <img data-id={index} alt={blocks} key={index} src={blocks} />
+              <div key={index} className="box">
+                <img
+                  data-cell-id={cell.index}
+                  data-cell-index={index}
+                  alt={cell.content}
+                  src={cell.content}
+                />
               </div>
             );
           })}
