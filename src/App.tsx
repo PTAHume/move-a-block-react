@@ -49,12 +49,12 @@ function App() {
       );
 
       if (moveUp) {
-        let playersNewLocation = currentState[playerLocation - width];
+        const playersNewLocation = currentState[playerLocation - width];
         if (
           playersNewLocation !== undefined &&
           playersNewLocation.content !== obstacle
         ) {
-          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+          const boxesNewLocations: Cell[] = boxLocations.map<Cell>(
             (cell: Cell) => {
               return currentState[cell.index - width];
             }
@@ -71,15 +71,13 @@ function App() {
               currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
-      }
-
-      if (moveDown) {
-        let playersNewLocation = currentState[playerLocation + width];
+      } else if (moveDown) {
+        const playersNewLocation = currentState[playerLocation + width];
         if (
           playersNewLocation !== undefined &&
           playersNewLocation.content !== obstacle
         ) {
-          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+          const boxesNewLocations: Cell[] = boxLocations.map<Cell>(
             (cell: Cell) => {
               return currentState[cell.index + width];
             }
@@ -96,10 +94,8 @@ function App() {
               currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
-      }
-
-      if (moveLeft) {
-        let playersNewLocation = currentState[playerLocation - 1];
+      } else if (moveLeft) {
+        const playersNewLocation = currentState[playerLocation - 1];
         if (
           playersNewLocation !== undefined &&
           playersNewLocation.content !== obstacle &&
@@ -125,16 +121,14 @@ function App() {
               currentState[playerLocation].content === box ? box : emptySpace;
           }
         }
-      }
-
-      if (moveRight) {
-        let playersNewLocation = currentState[playerLocation + 1];
+      } else if (moveRight) {
+        const playersNewLocation = currentState[playerLocation + 1];
         if (
           playersNewLocation !== undefined &&
           playersNewLocation.content !== obstacle &&
           leftBoundary.current.includes(playerLocation + 1) === false
         ) {
-          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
+          const boxesNewLocations: Cell[] = boxLocations.map<Cell>(
             (cell: Cell) => {
               return currentState[cell.index + 1];
             }
