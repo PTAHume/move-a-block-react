@@ -17,6 +17,7 @@ function useKeyPress(targetKey: string): boolean {
       setKeyPressed(false);
     }
   };
+
   // Add event listeners
   useEffect(() => {
     window.addEventListener("keydown", downHandler);
@@ -26,6 +27,7 @@ function useKeyPress(targetKey: string): boolean {
       window.removeEventListener("keydown", downHandler);
       window.removeEventListener("keyup", upHandler);
     };
+    // eslint-disable-next-line
   }, []); // Empty array ensures that effect is only run on mount and unmount
   return keyPressed;
 }
