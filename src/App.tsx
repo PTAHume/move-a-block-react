@@ -1,170 +1,152 @@
-import { MutableRefObject, useEffect, useRef, useState } from "react";
-import useKeyPress from "./hooks/key-press-handler";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import "./App.css";
+
 import Cell from "./shared/Cell";
+import ICell from "./interfaces/ICell";
+
+import useKeyPress from "./hooks/handle-key-press-events";
+import useHandleUpAction from "./hooks/handle-up-press-action";
+import useHandleDownAction from "./hooks/handle-down-press-action";
+import useHandleLeftAction from "./hooks/handle-left-press-action";
+import useHandleRightAction from "./hooks/handle-right-press-action";
+import useResetGoals from "./hooks/handle-goals-reset";
+import useLevelCompleteCheck from "./hooks/handle-level-complete-check";
+import useLevelLoader from "./hooks/level-loader";
+
 
 function App() {
-  const moveUp: boolean = useKeyPress("ArrowUp");
-  const moveDown: boolean = useKeyPress("ArrowDown");
-  const moveLeft: boolean = useKeyPress("ArrowLeft");
-  const moveRight: boolean = useKeyPress("ArrowRight");
+  const keyUp = "ArrowUp";
+  const keyDown = "ArrowDown";
+  const keyLeft = "ArrowLeft";
+  const keyRight = "ArrowRight";
+
+  const moveUp: boolean = useKeyPress(keyUp);
+  const moveDown: boolean = useKeyPress(keyDown);
+  const moveLeft: boolean = useKeyPress(keyLeft);
+  const moveRight: boolean = useKeyPress(keyRight);
+
   const emptySpace = require("./images/blank.png");
   const player = require("./images/player.png");
   const box = require("./images/box.png");
   const goal = require("./images/goal.png");
-  const obstacle = require("./images/obstacle.png");
+  const invalid = require("./images/invalid.png");
+
+  const handleUpAction = useHandleUpAction;
+  const handleDownAction = useHandleDownAction;
+  const handleLeftAction = useHandleLeftAction;
+  const handleRightAction = useHandleRightAction;
+  const resetGoals = useResetGoals;
+  const levelCompleteCheck = useLevelCompleteCheck;
+  const { LoadLevel } = useLevelLoader();
+
   const [currentArrangement, setCurrentArrangement]: any[] = useState([
-    Array<Cell>(64),
+    Array<Cell>(100),
   ]);
-  const width: number = 8;
-  const leftBoundary: MutableRefObject<number[]> = useRef<number[]>([
-    0, 8, 16, 24, 32, 40, 48, 56,
-  ]);
-  const rightBoundary: MutableRefObject<number[]> = useRef<number[]>([
-    7, 15, 23, 31, 39, 47, 55, 63,
-  ]);
+
+  const [goalLocations, setGoalLocations]: any[] = useState([Array<Cell>(100)]);
+  const width: number = 10;
+  const level = useRef<number>(0);
+  const keyPress = useRef<boolean>(false);
+  const levelInfo: ICell[] = LoadLevel(level.current)
 
   useEffect(() => {
-    let buildLevel: Array<Cell> = new Array(64)
-      .fill(undefined, 0, 64)
-      .map(
-        (value: any, index: number) =>
-          new Cell({ content: emptySpace, index: index })
-      );
+    let buildLevel: Array<Cell> = [...Array(100)].map(
+      (value: any, index: number) => new Cell({ content: emptySpace, index: index })
+    );
 
-    buildLevel[10] = new Cell({ content: player, index: 10 });
-    buildLevel[37] = new Cell({ content: obstacle, index: 37 });
-    buildLevel[27] = new Cell({ content: goal, index: 27 });
-    buildLevel[17] = new Cell({ content: box, index: 17 });
-    setCurrentArrangement(buildLevel);
-  }, [player, obstacle, goal, emptySpace, box]);
-  useEffect(() => {
-    if (moveUp || moveDown || moveLeft || moveRight) {
-      const currentState: Cell[] = currentArrangement;
-      const boxLocations: Cell[] = currentState.filter(
-        (cell: Cell) => cell.content === box
-      );
-      const playerLocation: number = currentState.findIndex(
-        (value) => value.content === player
-      );
-
-      if (moveUp) {
-        const playersNewLocation = currentState[playerLocation - width];
-        if (
-          playersNewLocation !== undefined &&
-          playersNewLocation.content !== obstacle
-        ) {
-          const boxesNewLocations: Cell[] = boxLocations.map<Cell>(
-            (cell: Cell) => {
-              return currentState[cell.index - width];
-            }
-          );
-          boxesNewLocations.forEach((cell: Cell) => {
-            if (cell !== undefined && cell.content !== obstacle) {
-              currentState[cell.index].content = box;
-              currentState[cell.index + width].content = emptySpace;
-            }
-          });
-          if (currentState[playerLocation - width].content !== box) {
-            currentState[playerLocation - width].content = player;
-            currentState[playerLocation].content =
-              currentState[playerLocation].content === box ? box : emptySpace;
-          }
-        }
-      } else if (moveDown) {
-        const playersNewLocation = currentState[playerLocation + width];
-        if (
-          playersNewLocation !== undefined &&
-          playersNewLocation.content !== obstacle
-        ) {
-          const boxesNewLocations: Cell[] = boxLocations.map<Cell>(
-            (cell: Cell) => {
-              return currentState[cell.index + width];
-            }
-          );
-          boxesNewLocations.forEach((cell: Cell) => {
-            if (cell !== undefined && cell.content !== obstacle) {
-              currentState[cell.index].content = box;
-              currentState[cell.index - width].content = emptySpace;
-            }
-          });
-          if (currentState[playerLocation + width].content !== box) {
-            currentState[playerLocation + width].content = player;
-            currentState[playerLocation].content =
-              currentState[playerLocation].content === box ? box : emptySpace;
-          }
-        }
-      } else if (moveLeft) {
-        const playersNewLocation = currentState[playerLocation - 1];
-        if (
-          playersNewLocation !== undefined &&
-          playersNewLocation.content !== obstacle &&
-          rightBoundary.current.includes(playerLocation - 1) === false
-        ) {
-          let boxesNewLocations: Cell[] = boxLocations.map<Cell>(
-            (cell: Cell) => {
-              return currentState[cell.index - 1];
-            }
-          );
-          boxesNewLocations.forEach((cell: Cell) => {
-            if (
-              cell.content !== obstacle &&
-              rightBoundary.current.includes(cell.index) === false
-            ) {
-              currentState[cell.index].content = box;
-              currentState[cell.index + 1].content = emptySpace;
-            }
-          });
-          if (currentState[playerLocation - 1].content !== box) {
-            currentState[playerLocation - 1].content = player;
-            currentState[playerLocation].content =
-              currentState[playerLocation].content === box ? box : emptySpace;
-          }
-        }
-      } else if (moveRight) {
-        const playersNewLocation = currentState[playerLocation + 1];
-        if (
-          playersNewLocation !== undefined &&
-          playersNewLocation.content !== obstacle &&
-          leftBoundary.current.includes(playerLocation + 1) === false
-        ) {
-          const boxesNewLocations: Cell[] = boxLocations.map<Cell>(
-            (cell: Cell) => {
-              return currentState[cell.index + 1];
-            }
-          );
-          boxesNewLocations.forEach((cell: Cell) => {
-            if (
-              cell.content !== obstacle &&
-              leftBoundary.current.includes(cell.index) === false
-            ) {
-              currentState[cell.index].content = box;
-              currentState[cell.index - 1].content = emptySpace;
-            }
-          });
-          if (currentState[playerLocation + 1].content !== box) {
-            currentState[playerLocation + 1].content = player;
-            currentState[playerLocation].content =
-              currentState[playerLocation].content === box ? box : emptySpace;
-          }
-        }
+    levelInfo.forEach((result: ICell) => {
+      console.log(result)
+      buildLevel[result.index] = {
+        content: result.content,
+        index: result.index
       }
+    });
 
-      setCurrentArrangement(currentState);
+    let buildGoalLocations = buildLevel.filter(
+      (cell: ICell) => {
+        if (goal && cell?.content) {
+          const matchGoal = goal.match(/[^\\/]+?(?=\.{1}\w){1}\b/i);
+          const matchCell = cell.content.match(/[^\\/]+?(?=\.{1}\w){1}\b/i);
+          if (matchGoal && matchCell && matchGoal.length && matchCell.length) {
+            return matchGoal[0] === matchCell[0];
+          }
+          return false
+        }
+        return false
+      }
+    );
+
+    setGoalLocations(buildGoalLocations);
+
+    setCurrentArrangement(buildLevel);
+
+  }, [levelInfo])
+
+  const checkKeyEvent = useCallback((key: string) => {
+    const boxLocations: ICell[] = currentArrangement.filter(
+      (cell: ICell) => cell.content === box
+    );
+    const playerLocation: number = currentArrangement.findIndex(
+      (value: ICell) => value.content === player
+    );
+    if (keyUp === key) {
+      handleUpAction(playerLocation, boxLocations, currentArrangement, width);
+    } else if (keyDown === key) {
+      handleDownAction(
+        playerLocation,
+        boxLocations,
+        currentArrangement,
+        width
+      );
+    } else if (keyLeft === key) {
+      handleLeftAction(playerLocation, boxLocations, currentArrangement);
+    } else if (keyRight === key) {
+      handleRightAction(playerLocation, boxLocations, currentArrangement);
+    }
+  }, [])
+
+
+  useEffect(() => {
+    console.log(moveUp, moveDown, moveLeft, moveRight);
+
+    let direction = Boolean(moveUp || moveDown || moveLeft || moveRight);
+    if (keyPress.current === false && direction === true) {
+      let key = moveUp
+        ? keyUp
+        : moveDown
+          ? keyDown
+          : moveLeft
+            ? keyLeft
+            : moveRight
+              ? keyRight
+              : "";
+
+      checkKeyEvent(key);
+
+      resetGoals(currentArrangement, goalLocations);
+
+      levelCompleteCheck(
+        currentArrangement,
+        goalLocations,
+        level.current
+      );
+
+      setCurrentArrangement([...currentArrangement]);
+    } else if (keyPress.current === true && direction === false) {
+      keyPress.current = false;
+      let foo = currentArrangement
+        .filter((cell: ICell) => cell.content === invalid)
+        .forEach((cell: ICell) => {
+          currentArrangement[cell.index].content = player;
+        });
+      setCurrentArrangement(foo);
     }
   }, [
-    moveUp,
     moveDown,
     moveLeft,
     moveRight,
-    emptySpace,
-    box,
-    currentArrangement,
-    player,
-    obstacle,
-    leftBoundary,
-    rightBoundary,
-    goal,
+    moveUp,
   ]);
 
   return (
@@ -190,3 +172,5 @@ function App() {
 }
 
 export default App;
+
+
